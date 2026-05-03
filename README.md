@@ -1,11 +1,24 @@
 # JuicedFixes
+A custom fork of Grim's JuicedFixes. Based of an older commit that still works with Wine.
+
 A set of fixes for Juiced game (2005). Still a WIP, but feel free to open an issue if you find any, or a pull request if you get something done.
 
+## Backports
+
+Certain fixes have been backported from the upstream JuicedFixes:  
+  * Version 1.1 support.  
+  * Crash when looking left.  
+
+## Fixes from fork
+
+The following has been fixed in this fork:
+  * Crewmember controls.  
+
 ## Fixes  
-The following had been fixed:  
-  *  "Juiced requires Virtual Memory to be enabled" error  
-  * Frequent crashes on calendar screen
-  * Proper XInput gamepad support
+The following had been fixed:
+  *  "Juiced requires Virtual Memory to be enabled". (Only active when version 1.0 is detected)  
+  * Frequent crashes on calendar screen  
+  * Proper XInput gamepad support  
 
 ## Instalation
 Just drag and drop (or copy and paste) the `dinput8.dll` and `scripts` folder into Juiced main folder. You can configure the fixes by editing `fixes.ini` inside `scripts` folder. 
@@ -17,8 +30,6 @@ There is no *yet* a GUI for configuring the controls, but it is planned. To conf
 
 ## Known issues
 There are those known issues:
-  * Unable to change AI companion aggression
-  * Looking left in the race crashes the game
   * Trying to bring controller settings in-game will not change the bindings  
     
 Other issues might be present as well. If you happen to find one - please fire an issue on this github page.
