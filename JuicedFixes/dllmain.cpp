@@ -28,7 +28,7 @@
 
 #define CHECK_TIMEOUT 1000 // Check controllers every n ms
 
-bool pressed[14];
+int pressed[14];
 
 // Patches
 bool PatchVirtualMemory = false;
@@ -130,19 +130,43 @@ void CheckControllers(void)
 
 float GetButtonAsAxle(int joyBtn, int joyIdx)
 {
+	if (joyBtn > 13 || joyBtn < 0)
+		return 0.f;
 	bool actuallyPressed = states[joyIdx].Gamepad.wButtons & JoyBtnToXInputBtn(joyBtn);
 	return actuallyPressed ? 1.0f : 0.0f;
+}
+
+int GetButtonAsOrder(int joyBtn, int joyIdx)
+{
+	if (joyBtn > 13 || joyBtn < 0)
+		return 0;
+	bool actuallyPressed = !!(states[joyIdx].Gamepad.wButtons & JoyBtnToXInputBtn(joyBtn));
+
+	if (actuallyPressed)
+	{
+		// In order to work as driver controls, the press must be reported for at least 2 ticks.
+		if (pressed[joyBtn] < 2)
+		{
+			pressed[joyBtn]++;
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	else {
+		pressed[joyBtn] = 0;
+	}
+	return false;
 }
 
 int GetButtonState(int joyBtn, int joyIdx)
 {
 	if (joyBtn > 13 || joyBtn < 0)
 		return 0;
-	bool actuallyPressed = states[joyIdx].Gamepad.wButtons & JoyBtnToXInputBtn(joyBtn);
+	bool actuallyPressed = !!(states[joyIdx].Gamepad.wButtons & JoyBtnToXInputBtn(joyBtn));
 	if (controlType == ControlType::Menu && joyBtn > 3)
 		return actuallyPressed;
-	if (joyBtn == JOY_DPAD_DOWN && actuallyPressed)
-		MessageBox(NULL, "IT WAS PRESSED YOU BITCH", "DPAD_DOWN", MB_ICONWARNING);
 
 	if (pressed[joyBtn])
 	{
@@ -156,28 +180,6 @@ int GetButtonState(int joyBtn, int joyIdx)
 	}
 	pressed[joyBtn] = false;
 	return false;
-
-	switch (joyBtn)
-	{
-	case JOY_BTN_A:
-		return states[joyIdx].Gamepad.wButtons & XINPUT_GAMEPAD_A & !(check.Gamepad.wButtons & XINPUT_GAMEPAD_A);
-	case JOY_BTN_B:
-		return states[joyIdx].Gamepad.wButtons & XINPUT_GAMEPAD_B;
-	case JOY_BTN_Y:
-		return states[joyIdx].Gamepad.wButtons & XINPUT_GAMEPAD_Y;
-	case JOY_BTN_X:
-		return states[joyIdx].Gamepad.wButtons & XINPUT_GAMEPAD_X;
-	case JOY_DPAD_DOWN:
-		return states[joyIdx].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN;
-	case JOY_DPAD_LEFT:
-		return states[joyIdx].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT;
-	case JOY_DPAD_RIGHT:
-		return states[joyIdx].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT;
-	case JOY_DPAD_UP:
-		return states[joyIdx].Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP;
-	default:
-		return 0;
-	}
 }
 
 float NormDeadzone(float value, float deadzone)
@@ -209,7 +211,7 @@ void RaiseEvents(void)
 		float normLX = fmaxf(-1, (float)state.Gamepad.sThumbLX / 32767.0);
 		float normLY = fmaxf(-1, (float)state.Gamepad.sThumbLY / 32767.0);
 		float normRX = fmaxf(-1, (float)state.Gamepad.sThumbRX / 32767.0);
-		float normRY = fmaxf(-1, (float)state.Gamepad.sThumbRY / 35767.0);
+		float normRY = fmaxf(-1, (float)state.Gamepad.sThumbRY / 32767.0);
 
 		steering = NormDeadzone(normLX, deadzone);
 		LY = NormDeadzone(normLY, deadzone);
@@ -391,9 +393,18 @@ int ProcessRaceInput(int key)
 	case RaceButtons::LookBack:
 	case RaceButtons::Nitro:
 		return GetButtonAsAxle(RaceCodes[key], 0);
+		break;
+	case RaceButtons::Driver1Up:
+	case RaceButtons::Driver2Up:
+	case RaceButtons::Driver1Down:
+	case RaceButtons::Driver2Down:
+	case RaceButtons::Driver3Up:
+	case RaceButtons::Driver3Down:
+		return GetButtonAsOrder(RaceCodes[key], 0);
+		break;
 	default:
 		return GetButtonState(RaceCodes[key], 0);
-
+		break;
 	}
 	return 0;
 }
@@ -440,12 +451,12 @@ void ReadConfig()
 	RaceCodes[6] = iniReader.ReadInteger("RaceControls", "GearDown", JOY_BTN_B);
 	RaceCodes[7] = iniReader.ReadInteger("RaceControls", "GearUp", JOY_BTN_A);
 	RaceCodes[8] = iniReader.ReadInteger("RaceControls", "Skip", 110);
-	RaceCodes[9] = iniReader.ReadInteger("RaceControls", "Race9", 110);
-	RaceCodes[10] = iniReader.ReadInteger("RaceControls", "Race10", 110);
-	RaceCodes[11] = iniReader.ReadInteger("RaceControls", "Race11", 110);
-	RaceCodes[12] = iniReader.ReadInteger("RaceControls", "Race12", 110);
-	RaceCodes[13] = iniReader.ReadInteger("RaceControls", "Race13", 110);
-	RaceCodes[14] = iniReader.ReadInteger("RaceControls", "Race14", 110);
+	RaceCodes[9] = iniReader.ReadInteger("RaceControls", "Driver1Up", 110);
+	RaceCodes[10] = iniReader.ReadInteger("RaceControls", "Driver2Up", 110);
+	RaceCodes[11] = iniReader.ReadInteger("RaceControls", "Driver1Down", 110);
+	RaceCodes[12] = iniReader.ReadInteger("RaceControls", "Driver2Down", 110);
+	RaceCodes[13] = iniReader.ReadInteger("RaceControls", "Driver3Up", 110);
+	RaceCodes[14] = iniReader.ReadInteger("RaceControls", "Driver3Down", 110);
 	RaceCodes[15] = iniReader.ReadInteger("RaceControls", "Race15", 110);
 	RaceCodes[16] = iniReader.ReadInteger("RaceControls", "Handbrake", 110);
 	RaceCodes[17] = iniReader.ReadInteger("RaceControls", "Reverse", 110);
@@ -478,7 +489,10 @@ int WINAPI DllMain(HMODULE hInstance, DWORD reason, LPVOID lpReserved)
 		memset(RaceCodes, 110, sizeof(RaceCodes));
 
 		for (int i = 0; i < 14; i++)
-			pressed[i] = false;
+		{
+			pressed[i] = 0;
+		}
+
 		ReadConfig();
 
 		controlType = ControlType::Menu;
